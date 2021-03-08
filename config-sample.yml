@@ -1,0 +1,18 @@
+global:
+  write_timeout: 300ms
+  read_timeout: 300ms
+  serialization_format: avro
+
+remote_write:
+  - kafka:
+      - job_name: cdc_kafka_sink
+        kafka_hosts: ["test"]
+        topic: abc
+remote_read:
+    dest : gcs
+      
+        
+
+
+
+

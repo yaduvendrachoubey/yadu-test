@@ -1,0 +1,19 @@
+global:
+  write_timeout: 300ms
+  read_timeout: 300ms
+  serialization_format: avro-json
+
+remote_write:
+  kafka_writers:
+    - job_name: kafka1
+      kafka_hosts: ["localhost:9092"]
+      topic_name: "topic-devinline-1"
+      producer_config:
+        max_batch_size: 100
+        message_key: "ddf"
+    - job_name: kafka1
+      kafka_hosts: ["localhost:9092"]
+      topic_name: "topic-devinline-2"
+      producer_config:
+        max_batch_size: 100
+        message_key: "dev2"

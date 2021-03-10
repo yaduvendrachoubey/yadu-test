@@ -8,7 +8,9 @@ import (
 
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/prompb"
+	"github.com/segmentio/kafka-go"
 	"github.com/sirupsen/logrus"
+	"github.com/ychoube/kafka-remote-write/producer"
 
 	"github.com/linkedin/goavro"
 )
@@ -31,8 +33,8 @@ func ParseSerializationFormat(value string) (Serializer, error) {
 }
 
 // Serialize generates the JSON representation for a given Prometheus metric.
-func Serialize(s Serializer, req *prompb.WriteRequest) ([][]byte, error) {
-	result := [][]byte{}
+func Serialize(s Serializer, req *prompb.WriteRequest) (*producer.KafkaMessages, error) {
+	result := &producer.KafkaMessages{}
 
 	for _, ts := range req.Timeseries {
 		labels := make(map[string]string, len(ts.Labels))
@@ -56,7 +58,10 @@ func Serialize(s Serializer, req *prompb.WriteRequest) ([][]byte, error) {
 				logrus.WithError(err).Errorln("couldn't marshal timeseries")
 			}
 
-			result = append(result, data)
+			result.MessageList = append(result.MessageList, kafka.Message{
+				Value: data,
+			})
+
 		}
 	}
 

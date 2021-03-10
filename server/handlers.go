@@ -15,6 +15,7 @@
 package server
 
 import (
+	"context"
 	"io/ioutil"
 	"net/http"
 
@@ -23,7 +24,8 @@ import (
 	"github.com/ychoube/kafka-remote-write/producer"
 	"github.com/ychoube/kafka-remote-write/serializer"
 
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	//"github.com/confluentinc/confluent-kafka-go/kafka"
+
 	"github.com/golang/snappy"
 
 	"github.com/gogo/protobuf/proto"
@@ -43,7 +45,7 @@ func init() {
 	prometheus.MustRegister(httpRequestsTotal)
 }
 
-func processWriteRequest(req *prompb.WriteRequest, ser serializer.Serializer) ([][]byte, error) {
+func processWriteRequest(req *prompb.WriteRequest, ser serializer.Serializer) (*producer.KafkaMessages, error) {
 	return serializer.Serialize(ser, req)
 }
 
@@ -81,12 +83,7 @@ func ReceiveHandler(producers *producer.Producers, ser serializer.Serializer) fu
 		}
 
 		for _, p := range producers.KafkaProducers {
-			for _, e := range msg {
-				p.KafkaClient.Produce(&kafka.Message{
-					TopicPartition: kafka.TopicPartition{Topic: &p.KafkaClientConfig.TopicName, Partition: kafka.PartitionAny},
-					Value:          e,
-				}, nil)
-			}
+			p.KafkaClient.WriteMessages(context.Background(), msg.MessageList...)
 		}
 
 	}

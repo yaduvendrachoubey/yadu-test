@@ -1,15 +1,20 @@
 package producer
 
 import (
-	"strings"
 
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	//"github.com/confluentinc/confluent-kafka-go/kafka"
+	kafka "github.com/segmentio/kafka-go"
+
 	"github.com/ychoube/kafka-remote-write/config"
 )
 
+type KafkaMessages struct {
+	MessageList []kafka.Message
+}
+
 type KafkaProducer struct {
 	KafkaClientConfig config.KafkaWriterConfig
-	KafkaClient       *kafka.Producer
+	KafkaClient       *kafka.Writer
 }
 
 func NewKafkaClient(kconfig *config.KafkaWriterConfig) (*KafkaProducer, error) {
@@ -17,31 +22,15 @@ func NewKafkaClient(kconfig *config.KafkaWriterConfig) (*KafkaProducer, error) {
 	kp = &KafkaProducer{
 		KafkaClientConfig: *kconfig,
 	}
-	kc, err := kp.NewkafkaProducerClient()
-	if err != nil {
-		return nil, err
-	}
-	kp.KafkaClient = kc
+	kp.KafkaClient = kp.NewkafkaProducerClient()
 	return kp, nil
-
 }
 
-func (k *KafkaProducer) NewkafkaProducerClient() (*kafka.Producer, error) {
+func (k *KafkaProducer) NewkafkaProducerClient() *kafka.Writer {
 
-	c, err := kafka.NewProducer(k.kafkaClientConfig())
-	if err != nil {
-		return nil, err
+	return &kafka.Writer{
+		Addr:        kafka.TCP(k.KafkaClientConfig.KafkaHosts...),
+		Topic:       k.KafkaClientConfig.TopicName,
+		MaxAttempts: 3,
 	}
-	return c, nil
-}
-
-func (k *KafkaProducer) kafkaClientConfig() *kafka.ConfigMap {
-	cfg := make(kafka.ConfigMap)
-	b := strings.Join(k.KafkaClientConfig.KafkaHosts, ",")
-	cfg.SetKey("bootstrap.servers", b)
-	cfg.SetKey("compression.codec", "none")
-	cfg.SetKey("batch.num.messages", k.KafkaClientConfig.ProducerConfigs.MaxBatchSize)
-	cfg.SetKey("go.delivery.reports", false)
-
-	return &cfg
 }
